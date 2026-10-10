@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from app.models.conversation import Conversation
     from app.models.template import PromptTemplate
     from app.models.usage import AIUsageRecord
+    from app.models.session import RefreshSession
 
 
 class User(Base):
@@ -33,7 +34,7 @@ class User(Base):
         nullable=False,
     )
 
-    # Relationships with selectin lazy loading for Async SQLAlchemy
+    # Relationships
     conversations: Mapped[List["Conversation"]] = relationship(
         "Conversation", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
@@ -42,6 +43,9 @@ class User(Base):
     )
     usage_records: Mapped[List["AIUsageRecord"]] = relationship(
         "AIUsageRecord", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
+    )
+    sessions: Mapped[List["RefreshSession"]] = relationship(
+        "RefreshSession", back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
 
     def __repr__(self) -> str:

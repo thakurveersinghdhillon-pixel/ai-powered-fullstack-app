@@ -4,6 +4,7 @@ from app.models.conversation import Conversation
 from app.models.message import Message
 from app.models.template import PromptTemplate
 from app.models.usage import AIUsageRecord
+from app.models.session import RefreshSession
 
 __all__ = [
     "Base",
@@ -12,4 +13,5 @@ __all__ = [
     "Message",
     "PromptTemplate",
     "AIUsageRecord",
+    "RefreshSession",
 ]

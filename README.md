@@ -30,13 +30,17 @@ ai-powered-fullstack-app/
 │   └── tailwind.config.ts
 ├── backend/                      # FastAPI Python Backend
 │   ├── app/
-│   │   ├── api/v1/               # Domain endpoints (health check, API routes)
-│   │   ├── core/                 # Config, Pydantic settings & DB engine session generator
-│   │   ├── models/               # SQLAlchemy ORM Models (User, Conversation, Message, PromptTemplate, AIUsageRecord)
+│   │   ├── api/
+│   │   │   ├── deps.py           # FastAPI dependency for JWT current user validation
+│   │   │   └── v1/
+│   │   │       ├── auth.py       # Authentication endpoints (register, login, refresh, logout, me)
+│   │   │       └── health.py     # System health check router
+│   │   ├── core/                 # Settings & Argon2id/JWT security utilities
+│   │   ├── models/               # SQLAlchemy ORM Models (User, RefreshSession, Conversation, Message, etc.)
 │   │   ├── schemas/              # Pydantic v2 validation schemas
 │   │   └── main.py               # FastAPI application entrypoint
 │   ├── alembic/                  # Database migration scripts & versions
-│   ├── tests/                    # pytest test suite (models, schemas, health)
+│   ├── tests/                    # pytest test suite (auth, models, schemas, health)
 │   ├── requirements.txt
 │   └── pytest.ini
 ├── docker-compose.yml            # PostgreSQL development service
@@ -47,7 +51,26 @@ ai-powered-fullstack-app/
 
 ---
 
-## 3. Database & Migrations (Phase 2A)
+## 3. Authentication & API Specification (Phase 2B)
+
+### Endpoints Overview
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/auth/register` | Public | Registers a new user with normalized email & Argon2id password hashing |
+| `POST` | `/api/v1/auth/login` | Public | Authenticates credentials, issues access token & sets HttpOnly refresh cookie |
+| `POST` | `/api/v1/auth/refresh` | Public (Cookie) | Rotates refresh token & issues new access token (with replay attack detection) |
+| `POST` | `/api/v1/auth/logout` | Public (Cookie) | Revokes server-side refresh session & clears HttpOnly cookie |
+| `GET` | `/api/v1/auth/me` | Protected | Returns authenticated user profile (requires `Authorization: Bearer <token>`) |
+
+### Development Cookie & CORS Notes
+* **Local HTTP Development**: `COOKIE_SECURE=False` in `.env` for local HTTP cookie transmission.
+* **Production HTTPS**: `COOKIE_SECURE=True` in production environment variables over TLS/HTTPS.
+* **CORS**: Configured with strict origin checks (`http://localhost:3000`) and `allow_credentials=True`.
+
+---
+
+## 4. Database & Migrations
 
 ### Database Migrations (Alembic)
 Apply database migrations to PostgreSQL:
@@ -64,9 +87,9 @@ cd backend
 
 ---
 
-## 4. Component Setup & Execution
+## 5. Component Setup & Execution
 
-### 4.1 PostgreSQL Database Service
+### 5.1 PostgreSQL Database Service
 Start the PostgreSQL container:
 ```bash
 docker compose up -d
@@ -77,51 +100,32 @@ Check container status and healthcheck:
 docker compose ps
 ```
 
-Stop the PostgreSQL container:
-```bash
-docker compose down
-```
-
-### 4.2 Backend (FastAPI) Setup
-1. Navigate to the backend directory:
+### 5.2 Backend (FastAPI) Setup
+1. Navigate to backend directory and activate virtual environment:
    ```bash
    cd backend
-   ```
-
-2. Activate virtual environment and install dependencies:
-   ```bash
    source venv/bin/activate
    pip install -r requirements.txt
    ```
 
-3. Run the development backend server:
+2. Run development backend server:
    ```bash
    uvicorn app.main:app --reload --port 8000
    ```
 
-4. Verify Health Endpoint:
-   * Open `http://localhost:8000/health` or `http://localhost:8000/api/v1/health` in your browser.
+3. Open Swagger API Documentation:
+   * Navigate to `http://localhost:8000/api/v1/openapi.json` or interactive docs.
 
-### 4.3 Frontend (Next.js) Setup
-1. Navigate to the frontend directory:
+### 5.3 Frontend (Next.js) Setup
+1. Navigate to frontend directory and run dev server:
    ```bash
    cd frontend
-   npm install
-   ```
-
-2. Start the Next.js development server:
-   ```bash
    npm run dev
-   ```
-
-3. Test production build:
-   ```bash
-   npm run build
    ```
 
 ---
 
-## 5. Testing & Verification
+## 6. Testing & Verification
 
 ### Run Backend Tests (pytest)
 ```bash
@@ -131,12 +135,12 @@ cd backend
 
 ---
 
-## 6. Project Roadmap Overview
+## 7. Project Roadmap Overview
 
 * **Phase 0**: Architecture and Project Planning — *[Completed]*
 * **Phase 1**: Project Foundation & Skeleton Setup — *[Completed]*
 * **Phase 2A**: PostgreSQL Integration, ORM Models & Migrations — *[Completed]*
-* **Phase 2B**: Authentication & User Management — *[Pending]*
+* **Phase 2B**: Authentication & User Management — *[Completed]*
 * **Phase 3**: Conversation, Message & Template Management — *[Pending]*
 * **Phase 4**: LLM Integration, SSE Streaming & Fallback Pipeline — *[Pending]*
 * **Phase 5**: Next.js Chat UI & Interactive Real-Time Experience — *[Pending]*
