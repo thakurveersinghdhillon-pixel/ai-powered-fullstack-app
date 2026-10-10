@@ -20,22 +20,23 @@ Before setting up the project, ensure you have the following installed:
 ```
 ai-powered-fullstack-app/
 ├── docs/
-│   └── ARCHITECTURE.md           # Phase 0 & Phase 1 Master Architecture Spec
+│   └── ARCHITECTURE.md           # Master Architecture & Phase Specification
 ├── frontend/                     # Next.js 15 App Router Frontend
 │   ├── src/
 │   │   ├── app/                  # App Router pages and layouts
 │   │   ├── components/           # UI Components (Sidebar, ChatArea, MessageInput)
-│   │   ├── hooks/                # Custom React Hooks
 │   │   └── types/                # TypeScript interface definitions
 │   ├── package.json
-│   ├── tsconfig.json
 │   └── tailwind.config.ts
 ├── backend/                      # FastAPI Python Backend
 │   ├── app/
 │   │   ├── api/v1/               # Domain endpoints (health check, API routes)
-│   │   ├── core/                 # Config & Pydantic settings
+│   │   ├── core/                 # Config, Pydantic settings & DB engine session generator
+│   │   ├── models/               # SQLAlchemy ORM Models (User, Conversation, Message, PromptTemplate, AIUsageRecord)
+│   │   ├── schemas/              # Pydantic v2 validation schemas
 │   │   └── main.py               # FastAPI application entrypoint
-│   ├── tests/                    # pytest test suite
+│   ├── alembic/                  # Database migration scripts & versions
+│   ├── tests/                    # pytest test suite (models, schemas, health)
 │   ├── requirements.txt
 │   └── pytest.ini
 ├── docker-compose.yml            # PostgreSQL development service
@@ -46,19 +47,20 @@ ai-powered-fullstack-app/
 
 ---
 
-## 3. Environment Variable Configuration
+## 3. Database & Migrations (Phase 2A)
 
-1. Copy `.env.example` to `.env` in the root directory:
-   ```bash
-   cp .env.example .env
-   ```
-2. Key environment variables configured:
-   * `POSTGRES_USER`: PostgreSQL database username (default: `postgres`)
-   * `POSTGRES_PASSWORD`: PostgreSQL database password
-   * `POSTGRES_DB`: PostgreSQL database name (`ai_app_db`)
-   * `POSTGRES_PORT`: Exposed host port (`5434`)
-   * `DATABASE_URL`: `postgresql+asyncpg://postgres:postgres_dev_password@localhost:5434/ai_app_db`
-   * `NEXT_PUBLIC_API_URL`: `http://localhost:8000/api/v1`
+### Database Migrations (Alembic)
+Apply database migrations to PostgreSQL:
+```bash
+cd backend
+./venv/bin/alembic upgrade head
+```
+
+Generate new migration:
+```bash
+cd backend
+./venv/bin/alembic revision --autogenerate -m "migration_description"
+```
 
 ---
 
@@ -81,55 +83,38 @@ docker compose down
 ```
 
 ### 4.2 Backend (FastAPI) Setup
-1. Navigate to the backend directory and create a Python virtual environment:
+1. Navigate to the backend directory:
    ```bash
    cd backend
-   python3 -m venv venv
    ```
 
-2. Activate the virtual environment:
-   * macOS / Linux:
-     ```bash
-     source venv/bin/activate
-     ```
-   * Windows:
-     ```bash
-     .\venv\Scripts\activate
-     ```
-
-3. Install backend dependencies:
+2. Activate virtual environment and install dependencies:
    ```bash
+   source venv/bin/activate
    pip install -r requirements.txt
    ```
 
-4. Run the development backend server:
+3. Run the development backend server:
    ```bash
    uvicorn app.main:app --reload --port 8000
    ```
 
-5. Verify Health Endpoint:
+4. Verify Health Endpoint:
    * Open `http://localhost:8000/health` or `http://localhost:8000/api/v1/health` in your browser.
 
 ### 4.3 Frontend (Next.js) Setup
 1. Navigate to the frontend directory:
    ```bash
    cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
    npm install
    ```
 
-3. Start the Next.js development server:
+2. Start the Next.js development server:
    ```bash
    npm run dev
    ```
 
-4. Open the application:
-   * Navigate to `http://localhost:3000` in your web browser.
-
-5. Test production build:
+3. Test production build:
    ```bash
    npm run build
    ```
@@ -144,19 +129,14 @@ cd backend
 ./venv/bin/pytest
 ```
 
-### Verify Frontend Production Build
-```bash
-cd frontend
-npm run build
-```
-
 ---
 
 ## 6. Project Roadmap Overview
 
 * **Phase 0**: Architecture and Project Planning — *[Completed]*
 * **Phase 1**: Project Foundation & Skeleton Setup — *[Completed]*
-* **Phase 2**: Database ORM Models & Authentication System — *[Pending]*
+* **Phase 2A**: PostgreSQL Integration, ORM Models & Migrations — *[Completed]*
+* **Phase 2B**: Authentication & User Management — *[Pending]*
 * **Phase 3**: Conversation, Message & Template Management — *[Pending]*
 * **Phase 4**: LLM Integration, SSE Streaming & Fallback Pipeline — *[Pending]*
 * **Phase 5**: Next.js Chat UI & Interactive Real-Time Experience — *[Pending]*
