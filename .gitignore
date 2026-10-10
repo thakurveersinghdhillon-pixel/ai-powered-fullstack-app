@@ -1,0 +1,43 @@
+# Dependency directories
+node_modules/
+frontend/node_modules/
+backend/venv/
+backend/.venv/
+venv/
+.venv/
+
+# Build and Output directories
+frontend/.next/
+frontend/out/
+frontend/build/
+backend/dist/
+
+# Python cache & test files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Environment variables & secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+frontend/.env.local
+backend/.env
+
+# Local database storage
+postgres_data/
+pgdata/
+
+# OS metadata & IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
