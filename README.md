@@ -97,15 +97,43 @@ All protected endpoints require `Authorization: Bearer <access_token>`.
 
 ## 6. Testing & Verification
 
+### Backend Tests
 Run the full automated backend test suite (39 tests covering LLM integration, SSE streaming, structured outputs, exponential retries, Auth, Conversations, Messages, Templates, Models, Schemas, Health):
 ```bash
 cd backend
 ./venv/bin/pytest
 ```
 
+### Frontend Build & Tests
+Run the frontend production build and unit test suite:
+```bash
+cd frontend
+npm run build
+node src/__tests__/stream_parser.test.js
+```
+
 ---
 
-## 7. Project Roadmap Overview
+## 7. Running the Full Stack
+
+1. **Start Backend & Database**:
+```bash
+cd backend
+# Ensure PostgreSQL container is running on port 5434
+docker compose up -d postgres
+./venv/bin/uvicorn app.main:app --reload --port 8000
+```
+
+2. **Start Next.js Frontend**:
+```bash
+cd frontend
+npm run dev
+```
+Navigate to `http://localhost:3000` to access the AI workspace.
+
+---
+
+## 8. Project Roadmap Overview
 
 * **Phase 0**: Architecture and Project Planning — *[Completed]*
 * **Phase 1**: Project Foundation & Skeleton Setup — *[Completed]*
@@ -113,5 +141,5 @@ cd backend
 * **Phase 2B**: Authentication & User Management — *[Completed]*
 * **Phase 3**: Conversation, Message & Template Management — *[Completed]*
 * **Phase 4**: LLM Integration, SSE Streaming & Fallback Pipeline — *[Completed]*
-* **Phase 5**: Next.js Chat UI & Interactive Real-Time Experience — *[Pending]*
+* **Phase 5**: Next.js Chat UI & Interactive Real-Time Experience — *[Completed]*
 * **Phase 6**: Cost Tracking, Dockerization & E2E Testing — *[Pending]*
