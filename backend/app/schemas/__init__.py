@@ -4,13 +4,21 @@ from app.schemas.conversation import (
     ConversationCreate,
     ConversationUpdate,
     ConversationResponse,
+    ConversationListResponse,
 )
-from app.schemas.message import MessageBase, MessageCreate, MessageResponse
+from app.schemas.message import (
+    MessageBase,
+    ClientMessageCreate,
+    MessageCreate,
+    MessageResponse,
+    MessageListResponse,
+)
 from app.schemas.template import (
     PromptTemplateBase,
     PromptTemplateCreate,
     PromptTemplateUpdate,
     PromptTemplateResponse,
+    PromptTemplateListResponse,
 )
 from app.schemas.usage import (
     AIUsageRecordBase,
@@ -27,13 +35,17 @@ __all__ = [
     "ConversationCreate",
     "ConversationUpdate",
     "ConversationResponse",
+    "ConversationListResponse",
     "MessageBase",
+    "ClientMessageCreate",
     "MessageCreate",
     "MessageResponse",
+    "MessageListResponse",
     "PromptTemplateBase",
     "PromptTemplateCreate",
     "PromptTemplateUpdate",
     "PromptTemplateResponse",
+    "PromptTemplateListResponse",
     "AIUsageRecordBase",
     "AIUsageRecordCreate",
     "AIUsageRecordResponse",

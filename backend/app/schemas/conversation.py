@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class ConversationBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=255)
+    title: str = Field(..., min_length=1, max_length=255, description="Title of the conversation")
 
 
 class ConversationCreate(ConversationBase):
@@ -23,3 +23,10 @@ class ConversationResponse(ConversationBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ConversationListResponse(BaseModel):
+    items: List[ConversationResponse]
+    total: int = Field(..., ge=0)
+    limit: int = Field(..., ge=1)
+    offset: int = Field(..., ge=0)

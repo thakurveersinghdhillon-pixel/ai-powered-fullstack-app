@@ -34,13 +34,15 @@ ai-powered-fullstack-app/
 │   │   │   ├── deps.py           # FastAPI dependency for JWT current user validation
 │   │   │   └── v1/
 │   │   │       ├── auth.py       # Authentication endpoints (register, login, refresh, logout, me)
+│   │   │       ├── conversations.py # Conversations & Messages API endpoints
+│   │   │       ├── templates.py  # Prompt Templates API endpoints
 │   │   │       └── health.py     # System health check router
-│   │   ├── core/                 # Settings & Argon2id/JWT security utilities
-│   │   ├── models/               # SQLAlchemy ORM Models (User, RefreshSession, Conversation, Message, etc.)
+│   │   ├── core/                 # Settings & security utilities
+│   │   ├── models/               # SQLAlchemy ORM Models (User, RefreshSession, Conversation, Message, PromptTemplate, AIUsageRecord)
 │   │   ├── schemas/              # Pydantic v2 validation schemas
 │   │   └── main.py               # FastAPI application entrypoint
 │   ├── alembic/                  # Database migration scripts & versions
-│   ├── tests/                    # pytest test suite (auth, models, schemas, health)
+│   ├── tests/                    # pytest test suite (auth, conversations, messages, templates, models, schemas, health)
 │   ├── requirements.txt
 │   └── pytest.ini
 ├── docker-compose.yml            # PostgreSQL development service
@@ -51,39 +53,98 @@ ai-powered-fullstack-app/
 
 ---
 
-## 3. Authentication & API Specification (Phase 2B)
+## 3. API Endpoints Specification
 
-### Endpoints Overview
+All protected endpoints require an `Authorization: Bearer <access_token>` header.
+
+### 3.1 Authentication Router (`/api/v1/auth`)
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `POST` | `/api/v1/auth/register` | Public | Registers a new user with normalized email & Argon2id password hashing |
-| `POST` | `/api/v1/auth/login` | Public | Authenticates credentials, issues access token & sets HttpOnly refresh cookie |
-| `POST` | `/api/v1/auth/refresh` | Public (Cookie) | Rotates refresh token & issues new access token (with replay attack detection) |
-| `POST` | `/api/v1/auth/logout` | Public (Cookie) | Revokes server-side refresh session & clears HttpOnly cookie |
-| `GET` | `/api/v1/auth/me` | Protected | Returns authenticated user profile (requires `Authorization: Bearer <token>`) |
+| `POST` | `/api/v1/auth/register` | Public | Register user with normalized email & Argon2id hash |
+| `POST` | `/api/v1/auth/login` | Public | Authenticate user, issue access token & set HttpOnly refresh cookie |
+| `POST` | `/api/v1/auth/refresh` | Cookie | Rotate refresh token & issue new access token |
+| `POST` | `/api/v1/auth/logout` | Cookie | Revoke refresh session & clear cookie |
+| `GET` | `/api/v1/auth/me` | Protected | Fetch current user profile |
 
-### Development Cookie & CORS Notes
-* **Local HTTP Development**: `COOKIE_SECURE=False` in `.env` for local HTTP cookie transmission.
-* **Production HTTPS**: `COOKIE_SECURE=True` in production environment variables over TLS/HTTPS.
-* **CORS**: Configured with strict origin checks (`http://localhost:3000`) and `allow_credentials=True`.
+### 3.2 Conversations & Messages Router (`/api/v1/conversations`)
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/conversations` | Protected | Create a new conversation |
+| `GET` | `/api/v1/conversations` | Protected | List user's conversations (paginated) |
+| `GET` | `/api/v1/conversations/{id}` | Protected | Retrieve a conversation by ID |
+| `PATCH` | `/api/v1/conversations/{id}` | Protected | Update conversation title |
+| `DELETE` | `/api/v1/conversations/{id}` | Protected | Delete conversation and cascade-delete messages |
+| `POST` | `/api/v1/conversations/{id}/messages` | Protected | Save a user message (`role: "user"`) |
+| `GET` | `/api/v1/conversations/{id}/messages` | Protected | List message history (paginated, `created_at ASC`) |
+| `GET` | `/api/v1/conversations/{id}/messages/{msg_id}` | Protected | Retrieve an individual message |
+
+#### Example Request: Create Conversation
+```json
+POST /api/v1/conversations
+Headers: { "Authorization": "Bearer <access_token>" }
+Body:
+{
+  "title": "Python Full-Stack Architecture"
+}
+```
+#### Example Response: Create Conversation
+```json
+{
+  "id": "b7e289f1-7c91-4d1a-9f12-9c12a83f9401",
+  "user_id": "040a8b16-0961-4b8d-bc5e-70f77bb5a661",
+  "title": "Python Full-Stack Architecture",
+  "created_at": "2026-10-11T01:05:00Z",
+  "updated_at": "2026-10-11T01:05:00Z"
+}
+```
+
+#### Example Request: Save User Message
+```json
+POST /api/v1/conversations/b7e289f1-7c91-4d1a-9f12-9c12a83f9401/messages
+Headers: { "Authorization": "Bearer <access_token>" }
+Body:
+{
+  "role": "user",
+  "content": "Explain async SQLAlchemy 2.x session management.",
+  "structured_output": { "topic": "ORM", "framework": "SQLAlchemy" }
+}
+```
 
 ---
 
-## 4. Database & Migrations
+### 3.3 Prompt Templates Router (`/api/v1/templates`)
 
-### Database Migrations (Alembic)
-Apply database migrations to PostgreSQL:
-```bash
-cd backend
-./venv/bin/alembic upgrade head
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/templates` | Protected | Create a reusable prompt template |
+| `GET` | `/api/v1/templates` | Protected | List user's templates (paginated) |
+| `GET` | `/api/v1/templates/{id}` | Protected | Retrieve a template by ID |
+| `PATCH` | `/api/v1/templates/{id}` | Protected | Update template (auto-increments version on content edit) |
+| `DELETE` | `/api/v1/templates/{id}` | Protected | Delete a template |
+
+#### Example Request: Create Prompt Template
+```json
+POST /api/v1/templates
+Headers: { "Authorization": "Bearer <access_token>" }
+Body:
+{
+  "name": "Code Reviewer",
+  "description": "Reviews Python code snippets for performance",
+  "template_content": "Review the following {{language}} code: {{code}}",
+  "version": 1
+}
 ```
 
-Generate new migration:
-```bash
-cd backend
-./venv/bin/alembic revision --autogenerate -m "migration_description"
-```
+---
+
+## 4. Interactive API Documentation
+
+FastAPI automatically serves interactive Swagger and ReDoc documentation:
+* **Swagger UI**: `http://localhost:8000/docs`
+* **ReDoc UI**: `http://localhost:8000/redoc`
+* **OpenAPI Schema**: `http://localhost:8000/api/v1/openapi.json`
 
 ---
 
@@ -95,39 +156,26 @@ Start the PostgreSQL container:
 docker compose up -d
 ```
 
-Check container status and healthcheck:
+### 5.2 Backend (FastAPI) Setup
 ```bash
-docker compose ps
+cd backend
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 ```
 
-### 5.2 Backend (FastAPI) Setup
-1. Navigate to backend directory and activate virtual environment:
-   ```bash
-   cd backend
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
-
-2. Run development backend server:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-
-3. Open Swagger API Documentation:
-   * Navigate to `http://localhost:8000/api/v1/openapi.json` or interactive docs.
-
 ### 5.3 Frontend (Next.js) Setup
-1. Navigate to frontend directory and run dev server:
-   ```bash
-   cd frontend
-   npm run dev
-   ```
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ---
 
 ## 6. Testing & Verification
 
-### Run Backend Tests (pytest)
+Run the full automated test suite (33 tests covering Auth, Conversations, Messages, Templates, Models, Schemas, Health):
 ```bash
 cd backend
 ./venv/bin/pytest
@@ -141,7 +189,7 @@ cd backend
 * **Phase 1**: Project Foundation & Skeleton Setup — *[Completed]*
 * **Phase 2A**: PostgreSQL Integration, ORM Models & Migrations — *[Completed]*
 * **Phase 2B**: Authentication & User Management — *[Completed]*
-* **Phase 3**: Conversation, Message & Template Management — *[Pending]*
+* **Phase 3**: Conversation, Message & Template Management — *[Completed]*
 * **Phase 4**: LLM Integration, SSE Streaming & Fallback Pipeline — *[Pending]*
 * **Phase 5**: Next.js Chat UI & Interactive Real-Time Experience — *[Pending]*
 * **Phase 6**: Cost Tracking, Dockerization & E2E Testing — *[Pending]*
