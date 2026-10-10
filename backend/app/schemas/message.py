@@ -24,6 +24,12 @@ class ClientMessageCreate(BaseModel):
     )
 
 
+class StreamMessageRequest(BaseModel):
+    content: str = Field(..., min_length=1, max_length=10000, description="User prompt to stream AI response for")
+    system_prompt: Optional[str] = Field(None, description="Optional system instruction for the LLM")
+    model: Optional[str] = Field(None, description="Optional LLM model override")
+
+
 class MessageCreate(MessageBase):
     conversation_id: uuid.UUID
 

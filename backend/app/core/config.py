@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -21,9 +21,16 @@ class Settings(BaseSettings):
 
     # Cookie Configuration
     REFRESH_COOKIE_NAME: str = "refresh_token"
-    COOKIE_SECURE: bool = False  # Set to True in production (HTTPS)
+    COOKIE_SECURE: bool = False
     COOKIE_SAMESITE: str = "lax"
     COOKIE_PATH: str = "/api/v1/auth"
+
+    # LLM Settings
+    OPENAI_API_KEY: Optional[str] = None
+    LLM_PROVIDER: str = "openai"
+    LLM_MODEL: str = "gpt-4o-mini"
+    LLM_TIMEOUT_SECONDS: float = 30.0
+    LLM_MAX_RETRIES: int = 3
 
     @property
     def sync_database_url(self) -> str:
